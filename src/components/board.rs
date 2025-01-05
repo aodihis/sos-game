@@ -1,13 +1,14 @@
-use yew::{Component, Context, Html, Properties};
+use yew::{html, Component, Context, Html, Properties};
+use crate::components::cell::Cell;
 
 #[derive(Properties, PartialEq, Clone)]
 pub struct BoardProps {
-    width: u32,
-    height: u32,
+    pub(crate) col: u32,
+    pub(crate) row: u32,
 }
 pub struct Board {
-    pub width: u32,
-    pub height: u32,
+    pub col: u32,
+    pub row: u32,
 
 }
 
@@ -17,12 +18,21 @@ impl Component for Board {
 
     fn create(ctx: &Context<Self>) -> Self {
         Self {
-            width: ctx.props().width,
-            height: ctx.props().height,
+            col: ctx.props().col,
+            row: ctx.props().row,
         }
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        todo!()
+
+        let cells = (0..self.col*self.row).map(|_| html! { <Cell /> });
+
+        let style = format!("grid-template-columns: repeat({}, 1fr);grid-template-rows: repeat({}, 1fr);", self.col, self.row);
+
+        html! {
+            <div class="grid center" style={style}>
+                {for cells}
+            </div>
+        }
     }
 }

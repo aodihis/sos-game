@@ -1,7 +1,7 @@
 mod components;
 
 use yew::{function_component, html, Html};
-use crate::components::cell::Cell;
+use crate::components::board::Board;
 
 #[function_component]
 fn App() -> Html {
@@ -9,9 +9,6 @@ fn App() -> Html {
     let column = 10;
     let width = 30*column;
 
-    let cells = (0..column*row).map(|_| html! { <Cell /> });
-
-    let style = format!("grid-template-columns: repeat({}, 1fr);grid-template-rows: repeat({}, 1fr);", column, row);
     let width_style = format!("width:{}px;", width+column-1);
     html! {
         <>
@@ -25,9 +22,7 @@ fn App() -> Html {
                     <div class="turn center">
                         {"Your turn."}
                     </div>
-                    <div class="grid center" style={style}>
-                        {for cells}
-                    </div>
+                    <Board row={row} col={column}/>
                 </div>
             </div>
         </>

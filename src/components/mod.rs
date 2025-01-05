@@ -1,2 +1,2 @@
 pub mod cell;
-mod board;
+pub mod board;

@@ -1,5 +1,5 @@
 use std::cmp::PartialEq;
-use yew::{html, Component, Context, Html};
+use yew::{html, Component, Context, Html, MouseEvent};
 
 pub enum Msg {
     SetLock,
@@ -47,9 +47,12 @@ impl Component for Cell {
 
     fn view(&self, ctx: &Context<Self>) -> Html {
 
-        let onclick = ctx.link().callback(|_| Msg::UpdateValue);
+        let on_select = ctx.link().callback(move |event: MouseEvent| {
+            event.prevent_default();
+            Msg::UpdateValue
+        });
         html!{
-            <div class="cell unselectable" onclick={onclick}>
+            <div class="cell unselectable" oncontextmenu={on_select}>
                 {
                     match self.value {
                         CellValue::S => html!{"S"},
