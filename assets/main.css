@@ -1,0 +1,75 @@
+.container {
+    padding-right: 15px;
+    padding-left: 15px;
+    margin-right: auto;
+    margin-left: auto;
+}
+@media (min-width: 768px) {
+    .container {
+        width: 750px;
+    }
+}
+@media (min-width: 992px) {
+    .container {
+        width: 970px;
+    }
+}
+@media (min-width: 1200px) {
+    .container {
+        width: 1170px;
+    }
+}
+
+.center {
+    margin: 0 auto;
+}
+
+.scoreboard {
+    display: flex;
+    justify-content: space-between; /* Align items to the left and right */
+    padding: 5px;
+    margin: 0 auto 10px;
+    font-size: 18px;
+}
+
+.header {
+    font-size: 30px;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.your-score {
+    color: green;
+}
+
+.computer-score {
+    color: red;
+    text-align: right;
+}
+
+.turn {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.grid {
+    display: grid;
+    grid-gap: 1px;
+    width: fit-content;
+}
+
+.cell {
+    outline: 1px solid rgb(255 206 215);
+    padding: 0;
+    font-size: 30px;
+    text-align: center;
+    width: 30px;
+    height: 30px;
+}
+
+.unselectable {
+    user-select: none; /* Prevents text selection */
+    -webkit-user-select: none; /* For WebKit browsers like Safari and Chrome */
+    -moz-user-select: none; /* For Firefox */
+    -ms-user-select: none; /* For older versions of IE */
+}
