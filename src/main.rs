@@ -7,7 +7,7 @@ use crate::components::board::Board;
 fn App() -> Html {
     let row = 10;
     let column = 10;
-    let width = 30*column;
+    let width = 50*column;
 
     let width_style = format!("width:{}px;", width+column-1);
     html! {

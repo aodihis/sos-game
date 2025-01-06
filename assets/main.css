@@ -59,12 +59,14 @@
 }
 
 .cell {
-    outline: 1px solid rgb(255 206 215);
+    position: relative;
+    outline: 1px solid #3A3960;
     padding: 0;
     font-size: 30px;
     text-align: center;
-    width: 30px;
-    height: 30px;
+    width: 50px;
+    height: 50px;
+    background-color: #FAFFC5;
 }
 
 .unselectable {
@@ -72,4 +74,61 @@
     -webkit-user-select: none; /* For WebKit browsers like Safari and Chrome */
     -moz-user-select: none; /* For Firefox */
     -ms-user-select: none; /* For older versions of IE */
+}
+
+.line {
+    position: absolute;
+    width: 1px;
+    height: 10px;
+    background: #5E686D;
+}
+
+.line.bottom-right {
+    bottom: -4%;
+    right: 5%;
+    transform: rotate(-45deg);
+}
+
+.line.bottom-center {
+    bottom: 0;
+    left: 50%;
+}
+
+.line.bottom-left {
+    bottom: -4%;
+    left: 5%;
+    transform: rotate(45deg);
+}
+
+.line.top-left {
+    top: -4%;
+    left: 5%;
+    transform: rotate(-45deg);
+}
+
+.line.top-right {
+    top: -4%;
+    right: 5%;
+    transform: rotate(45deg);
+}
+
+.line.top-center {
+    top: 0;
+    left: 50%;
+}
+
+.line.center-left{
+    top: 40%;
+    left: 8%;
+    transform: rotate(90deg);
+}
+
+.line.center-right{
+    top: 40%;
+    right: 8%;
+    transform: rotate(90deg);
+}
+
+.selecting {
+    color: #A9BFA8;
 }
