@@ -1,19 +1,33 @@
+use crate::components::state::{BoardEvents, BoardState};
 use std::cmp::PartialEq;
-use yew::{html, Component, Context, Html, MouseEvent};
+use std::rc::Rc;
+use yew::{html, Callback, Component, Context, ContextHandle, Html, MouseEvent, Properties};
 
 pub enum Msg {
-    SetLock,
     UpdateValue,
+    ContextChanged(Rc<BoardState>),
+
 }
-#[derive(PartialEq)]
-enum CellValue {
+
+#[derive(PartialEq, Clone, Copy)]
+pub enum CellValue {
     Empty,
     S,
     O,
 }
 
+#[derive(Properties, PartialEq, Clone)]
+pub struct CellProps {
+    pub id: u16,
+    pub onselect: Callback<(u16,CellValue)>,
+}
+
 pub struct Cell {
-    is_selecting: bool,
+    id: u16,
+    sys_lock: bool,
+    state:Rc<BoardState>,
+    _listener:ContextHandle<Rc<BoardState>>,
+    // locking_state: Rc<LockingState>,
     is_lock: bool,
     value: CellValue,
     top_left: bool,
@@ -29,11 +43,19 @@ pub struct Cell {
 
 impl Component for Cell {
     type Message = Msg;
-    type Properties = ();
+    type Properties = CellProps;
 
-    fn create(_ctx: &Context<Self>) -> Self {
+    fn create(ctx: &Context<Self>) -> Self {
+
+        let (state, _listener) = ctx.link()
+            .context::<Rc<BoardState>>(ctx.link().callback(Msg::ContextChanged))
+            .expect("Failed to update state");
+        // let (locking_state, _) = ctx.link().context::<Rc<LockingState>>(ctx.link().callback(Msg::SetLock)).expect("failed to get locking state");
         Self {
-            is_selecting: false,
+            id: ctx.props().id,
+            _listener,
+            state,
+            sys_lock: false,
             is_lock: false,
             value: CellValue::Empty,
             top_left: false,
@@ -49,13 +71,26 @@ impl Component for Cell {
 
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            Msg::SetLock => {false},
+            Msg::ContextChanged(state) => {
+                match &state.events {
+                    BoardEvents::Lock => self.sys_lock = true,
+                    BoardEvents::Unlock => self.sys_lock = false,
+                    BoardEvents::Update(_map) => {},
+                    _ => {}
+                }
+                self.state = state;
+                true
+            },
             Msg::UpdateValue => {
-                self.is_selecting = true;
+                if self.sys_lock {
+                    return false;
+                }
+                if self.is_lock {
+                    return false;
+                }
                 if self.value == CellValue::S {
                     self.value = CellValue::O;
                 } else if  self.value == CellValue::O {
-                    self.is_selecting = false;
                     self.value = CellValue::Empty;
                 } else {
                     self.value = CellValue::S;
@@ -67,13 +102,23 @@ impl Component for Cell {
 
     fn view(&self, ctx: &Context<Self>) -> Html {
 
-        let on_select = ctx.link().callback(move |event: MouseEvent| {
+        let on_choose = ctx.link().callback(move |event: MouseEvent| {
             event.prevent_default();
             Msg::UpdateValue
         });
-        let text_class = if self.is_selecting {"selecting"} else {""};
+        // let on_lock = ctx.link().callback(move |_| Msg::SetLock());
+        let id = self.id;
+        let selected = self.value.clone();
+        let onselect = ctx.props().onselect.reform(move |_| {(id,selected)});
+        let text_class = if self.is_lock {"cell-text"} else {"selecting cell-text"};
         html!{
-            <div class="cell unselectable" oncontextmenu={on_select}>
+            <div class="cell unselectable" oncontextmenu={on_choose} onclick={
+                    if !self.sys_lock {
+                       onselect
+                    } else {
+                        Callback::noop()
+                    }
+                }>
                 <div class={text_class}>{
                     match self.value {
                         CellValue::S => html!{"S"},

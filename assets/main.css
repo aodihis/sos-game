@@ -69,6 +69,10 @@
     background-color: #FAFFC5;
 }
 
+.cell-text {
+    margin-top:8px;
+}
+
 .unselectable {
     user-select: none; /* Prevents text selection */
     -webkit-user-select: none; /* For WebKit browsers like Safari and Chrome */

@@ -1,4 +1,5 @@
 mod components;
+mod engine;
 
 use yew::{function_component, html, Html};
 use crate::components::board::Board;
@@ -31,5 +32,6 @@ fn App() -> Html {
 
 
 fn main() {
+
     yew::Renderer::<App>::new().render();
 }
