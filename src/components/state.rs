@@ -1,6 +1,6 @@
 use std::collections::HashMap;
-use crate::components::cell::CellValue;
 use yew::Callback;
+use crate::engine::cell::CellValue;
 
 #[derive(Clone, PartialEq)]
 pub enum BoardEvents {

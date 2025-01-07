@@ -2,6 +2,7 @@ use crate::components::state::{BoardEvents, BoardState};
 use std::cmp::PartialEq;
 use std::rc::Rc;
 use yew::{html, Callback, Component, Context, ContextHandle, Html, MouseEvent, Properties};
+use crate::engine::cell::CellValue;
 
 pub enum Msg {
     UpdateValue,
@@ -9,12 +10,6 @@ pub enum Msg {
 
 }
 
-#[derive(PartialEq, Clone, Copy)]
-pub enum CellValue {
-    Empty,
-    S,
-    O,
-}
 
 #[derive(Properties, PartialEq, Clone)]
 pub struct CellProps {
