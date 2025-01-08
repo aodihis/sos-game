@@ -1,6 +1,4 @@
-use gloo::console::info;
-use wasm_bindgen::JsValue;
-use crate::engine::bot::{Bot};
+use crate::engine::bot::Bot;
 use crate::engine::cell::CellValue;
 
 pub struct  UpdateResponse {
@@ -79,23 +77,10 @@ impl Game {
             self.add_o(pos as i16)
         };
         self.cells[pos as usize] = value;
-        // let mut spk = vec![];
-        // for val in &self.cells {
-        //     match val {
-        //         CellValue::Empty => {
-        //             spk.push("".to_string());
-        //         },
-        //         CellValue::S =>  {
-        //             spk.push("S".to_string());
-        //         }
-        //         CellValue::O => spk.push("O".to_string()),
-        //     }
-        // }
-        // let vc = JsValue::from(spk);
-        // info!(vc);
         self.scores[player as usize] += ret.len() as u16;
         self.turn = (self.turn + 1) % self.num_of_players;
         self.sos.extend_from_slice(&ret);
+        self.total_occupied += 1;
         Ok(UpdateResponse {
             next_turn: self.turn,
             scores: self.scores.clone(),
@@ -129,6 +114,9 @@ impl Game {
     }
 
     pub fn bot_move(&mut self) -> Result<(u16, CellValue, Vec<(u16, u16, u16)>), GameError> {
+        if self.is_game_over() {
+            return Err(GameError::GameFinished);
+        }
         let (pos, val) = Bot::make_move(self);
         let res = self.update(self.turn, pos, val)?;
         Ok((pos, val, res.new_sos))
@@ -152,6 +140,13 @@ impl Game {
                 continue;
             }
             if i >= self.total as i16 || j >= self.total as i16 || k >= self.total as i16 {
+                continue;
+            }
+
+            let irow = i as u16/ self.col;
+            let krow = k as u16/ self.col;
+
+            if !(krow - irow == 0 || krow - irow == 2) {
                 continue;
             }
 

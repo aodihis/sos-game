@@ -50,6 +50,31 @@
 .turn {
     text-align: center;
     margin-bottom: 10px;
+    font-size: 20px;
+}
+
+.win-bar {
+    text-align: center;
+    font-weight: bold;
+    font-size: 20px;
+    color: #3A3960;
+    margin-bottom: 10px;
+}
+
+.lose-bar {
+    text-align: center;
+    font-weight: bold;
+    font-size: 20px;
+    color: red;
+    margin-bottom: 10px;
+}
+
+.draw-bar {
+    text-align: center;
+    font-weight: bold;
+    font-size: 20px;
+    color: #5E686D;
+    margin-bottom: 10px;
 }
 
 .grid {

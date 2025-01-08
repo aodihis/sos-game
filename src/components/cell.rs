@@ -1,11 +1,9 @@
+use crate::components::constants::{LINE_BOTTOM_CENTER, LINE_BOTTOM_LEFT, LINE_BOTTOM_RIGHT, LINE_CENTER_LEFT, LINE_CENTER_RIGHT, LINE_TOP_CENTER, LINE_TOP_LEFT, LINE_TOP_RIGHT};
 use crate::components::state::{BoardEvents, BoardState};
+use crate::engine::cell::CellValue;
 use std::cmp::PartialEq;
 use std::rc::Rc;
-use gloo::console::info;
-use wasm_bindgen::JsValue;
 use yew::{html, Callback, Component, Context, ContextHandle, Html, MouseEvent, Properties};
-use crate::components::constants::{LINE_BOTTOM_CENTER, LINE_BOTTOM_LEFT, LINE_BOTTOM_RIGHT, LINE_CENTER_LEFT, LINE_CENTER_RIGHT, LINE_TOP_CENTER, LINE_TOP_LEFT, LINE_TOP_RIGHT};
-use crate::engine::cell::CellValue;
 
 pub enum Msg {
     UpdateValue,

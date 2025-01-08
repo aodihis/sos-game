@@ -1,7 +1,6 @@
-use std::mem::zeroed;
-use rand::Rng;
 use crate::engine::cell::CellValue;
 use crate::engine::game::Game;
+use rand::Rng;
 
 pub struct Bot {
 
@@ -44,7 +43,7 @@ impl Bot {
         for i in 0..moves.len() {
             let (pos, val) = moves[i];
             if val == CellValue::O && Bot::is_defensive_move(game, i as i16) {
-                candidates.push((i as u16, CellValue::O));
+                candidates.push((pos, CellValue::O));
             }
         }
         if candidates.is_empty() {
@@ -63,6 +62,14 @@ impl Bot {
             if x < 0 || z < 0 || x >= game.total as i16 || z >= game.total as i16 {
                 continue;
             }
+
+            let irow = x as u16/ game.col;
+            let krow = z as u16/ game.col;
+
+            if !(krow - irow == 0 || krow - irow == 2) {
+                continue;
+            }
+
             if game.cells[x as usize] == CellValue::S && game.cells[z as usize] == CellValue::S {
                 return true;
             }

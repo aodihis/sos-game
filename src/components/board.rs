@@ -2,12 +2,10 @@ use crate::components::cell::Cell;
 use crate::components::constants::{COMPUTER_TURN, LINE_BOTTOM_CENTER, LINE_BOTTOM_LEFT, LINE_BOTTOM_RIGHT, LINE_CENTER_LEFT, LINE_CENTER_RIGHT, LINE_TOP_CENTER, LINE_TOP_LEFT, LINE_TOP_RIGHT, PLAYER_TURN};
 use crate::components::state::{BoardEvents, BoardState};
 use crate::engine::cell::CellValue;
-use crate::engine::game::{Game, GameError, UpdateResponse};
+use crate::engine::game::Game;
+use gloo_timers::future::TimeoutFuture;
 use std::collections::HashMap;
 use std::rc::Rc;
-use gloo::console::info;
-use gloo_timers::future::TimeoutFuture;
-use wasm_bindgen::JsValue;
 use yew::{html, Component, Context, ContextProvider, Html, Properties};
 
 #[derive(Properties, PartialEq, Clone)]
@@ -57,13 +55,6 @@ impl Component for Board {
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             BoardMsg::Selecting((id, val)) => {
-                // info!(
-                //     match val {
-                //         CellValue::S => "S",
-                //         CellValue::O => "O",
-                //         CellValue::Empty => "Empty",
-                //     }
-                // );
                 if self.turn == COMPUTER_TURN {
                     return false;
                 }
@@ -98,9 +89,6 @@ impl Component for Board {
                         map.insert(id, (0,Some(val)));
                         self.grouping_sos(&result.new_sos, &mut map);
                         Rc::make_mut(&mut self.state).events = BoardEvents::Update(map);
-                        if self.game_engine.is_game_over() {
-                            ctx.link().send_message(BoardMsg::GameOver);
-                        }
                         true
                     },
                     Err(_) => {
@@ -116,7 +104,7 @@ impl Component for Board {
                 true
             },
             BoardMsg::BotMove => {
-                if self.turn != COMPUTER_TURN {
+                if self.turn != COMPUTER_TURN || self.game_engine.is_game_over() {
                     return false;
                 }
                 let response = self.game_engine.bot_move();
@@ -134,7 +122,7 @@ impl Component for Board {
                             ctx.link().send_message(BoardMsg::GameOver);
                         }
                     }
-                    Err(_) => {}
+                    Err(_e) => {}
                 }
                 true
             },
@@ -152,14 +140,14 @@ impl Component for Board {
         let style = format!("grid-template-columns: repeat({}, 1fr);grid-template-rows: repeat({}, 1fr);", self.col, self.row);
         let message = if self.game_engine.is_game_over() {
             match self.player_score.cmp(&self.bot_score) {
-                std::cmp::Ordering::Greater => "You win!",
-                std::cmp::Ordering::Less => "Computer wins!",
-                std::cmp::Ordering::Equal => "Draw!",
+                std::cmp::Ordering::Greater => html!(<p class="win-bar">{"You win!"}</p>),
+                std::cmp::Ordering::Less => html!(<p class="lose-bar">{"You lose!"}</p>),
+                std::cmp::Ordering::Equal => html!(<p class="draw-bar">{"Draw"}</p>),
             }
         } else if self.turn == 0 {
-            "Your turn"
+            html!(<p class="turn">{"Your turn"}</p>)
         } else {
-            "Enemy turn"
+            html!(<p class="turn">{"Computer turn"}</p>)
         };
 
         html! {
