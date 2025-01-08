@@ -1,5 +1,6 @@
 use gloo::console::info;
 use wasm_bindgen::JsValue;
+use crate::engine::bot::{Bot};
 use crate::engine::cell::CellValue;
 
 pub struct  UpdateResponse {
@@ -8,23 +9,25 @@ pub struct  UpdateResponse {
     pub next_turn: u8
 }
 #[derive(Debug)]
-pub enum UpdateError {
+pub enum GameError {
     InvalidPlayer,
     InvalidPosition,
     PositionAlreadyOccupied,
     InvalidMove,
+    GameFinished,
 }
 
 #[derive(Clone)]
 pub struct Game {
-    num_of_players: u8,
+    pub num_of_players: u8,
     turn : u8,
-    scores: Vec<u16>,
+    pub scores: Vec<u16>,
     _row: u16,
-    col: u16,
-    total: u16,
-    cells: Vec<CellValue>,
-    _sos: Vec<(u16, u16, u16)>
+    pub col: u16,
+    pub total: u16,
+    pub cells: Vec<CellValue>,
+    total_occupied: u16,
+    sos: Vec<(u16, u16, u16)>
 }
 
 
@@ -41,36 +44,41 @@ impl Game {
             col,
             total,
             cells: vec![CellValue::Empty;total as usize],
-            _sos: vec![]
+            total_occupied: 0,
+            sos: vec![]
         }
 
     }
 
-    pub fn update(&mut self, player:u8, pos:u16, value: CellValue) -> Result<UpdateResponse, UpdateError> {
+    pub fn update(&mut self, player:u8, pos:u16, value: CellValue) -> Result<UpdateResponse, GameError> {
+        if self.total_occupied >= self.total {
+            return Err(GameError::GameFinished);
+        }
         if pos >= self.total {
-            return Err(UpdateError::InvalidPosition);
+            return Err(GameError::InvalidPosition);
         }
         if self.cells[pos as usize] != CellValue::Empty {
-            return Err(UpdateError::PositionAlreadyOccupied);
+            return Err(GameError::PositionAlreadyOccupied);
         }
         if self.turn != player {
-            return Err(UpdateError::InvalidPlayer);
+            return Err(GameError::InvalidPlayer);
         }
 
         if  player >= self.num_of_players {
-            return Err(UpdateError::InvalidPlayer);
+            return Err(GameError::InvalidPlayer);
         }
 
         if value == CellValue::Empty {
-            return Err(UpdateError::InvalidMove);
+            return Err(GameError::InvalidMove);
         }
 
-        self.cells[pos as usize] = value;
+
         let ret = if value == CellValue::S {
             self.add_s(pos as i16)
         }else {
             self.add_o(pos as i16)
         };
+        self.cells[pos as usize] = value;
         // let mut spk = vec![];
         // for val in &self.cells {
         //     match val {
@@ -87,7 +95,7 @@ impl Game {
         // info!(vc);
         self.scores[player as usize] += ret.len() as u16;
         self.turn = (self.turn + 1) % self.num_of_players;
-
+        self.sos.extend_from_slice(&ret);
         Ok(UpdateResponse {
             next_turn: self.turn,
             scores: self.scores.clone(),
@@ -104,7 +112,7 @@ impl Game {
         ];
 
         let mut ret : Vec<(u16,u16,u16)> = vec![];
-        self.get_sos_candidates(&mut ret, groups);
+        self.get_sos_candidates(&mut ret, groups, pos, CellValue::S);
         ret
     }
 
@@ -116,11 +124,29 @@ impl Game {
         ];
 
         let mut ret : Vec<(u16,u16,u16)> = vec![];
-        self.get_sos_candidates(&mut ret, groups);
+        self.get_sos_candidates(&mut ret, groups, pos, CellValue::O);
         ret
     }
 
-    fn get_sos_candidates(&self, candidates: &mut Vec<(u16, u16, u16)>, groups: Vec<(i16, i16, i16)>) {
+    pub fn bot_move(&mut self) -> Result<(u16, CellValue, Vec<(u16, u16, u16)>), GameError> {
+        let (pos, val) = Bot::make_move(self);
+        let res = self.update(self.turn, pos, val)?;
+        Ok((pos, val, res.new_sos))
+    }
+
+    pub fn get_scores(&self) -> Vec<u16> {
+        self.scores.clone()
+    }
+
+    pub fn get_current_turn(&self) -> u8 {
+        self.turn
+    }
+
+    pub fn is_game_over(&self) -> bool {
+        self.total_occupied >= self.total
+    }
+
+    fn get_sos_candidates(&self, candidates: &mut Vec<(u16, u16, u16)>, groups: Vec<(i16, i16, i16)>, pos: i16, value: CellValue) {
         for &(i,j, k) in groups.iter() {
             if i < 0 || j < 0 || k < 0 {
                 continue;
@@ -128,7 +154,23 @@ impl Game {
             if i >= self.total as i16 || j >= self.total as i16 || k >= self.total as i16 {
                 continue;
             }
-            if self.cells[i as usize] == CellValue::S && self.cells[j as usize] == CellValue::O  && self.cells[k as usize] == CellValue::S {
+
+            let x = if i  == pos {
+                value
+            } else {
+                self.cells[i as usize]
+            };
+            let y = if j  == pos {
+                value
+            } else {
+                self.cells[j as usize]
+            };
+            let z = if k  == pos {
+                value
+            } else {
+                self.cells[k as usize]
+            };
+            if x == CellValue::S && y == CellValue::O  && z == CellValue::S {
                 candidates.push((i as u16, j as u16, k as u16));
             }
         }

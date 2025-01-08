@@ -11,3 +11,5 @@ web-sys = "0.3"
 wasm-bindgen-futures = "0.4.49"
 gloo = "0.11.0"
 gloo-timers = { version = "0.3.0", features = ["futures"] }
+rand = "0.8.5"
+getrandom = { version = "0.2", features = ["js"] }

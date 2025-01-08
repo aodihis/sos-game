@@ -2,7 +2,7 @@ use crate::components::cell::Cell;
 use crate::components::constants::{COMPUTER_TURN, LINE_BOTTOM_CENTER, LINE_BOTTOM_LEFT, LINE_BOTTOM_RIGHT, LINE_CENTER_LEFT, LINE_CENTER_RIGHT, LINE_TOP_CENTER, LINE_TOP_LEFT, LINE_TOP_RIGHT, PLAYER_TURN};
 use crate::components::state::{BoardEvents, BoardState};
 use crate::engine::cell::CellValue;
-use crate::engine::game::{Game, UpdateResponse};
+use crate::engine::game::{Game, GameError, UpdateResponse};
 use std::collections::HashMap;
 use std::rc::Rc;
 use gloo::console::info;
@@ -20,7 +20,9 @@ pub enum BoardMsg {
     Selecting((u16, CellValue)),
     LockCells,
     UnlockCells,
+    BotMove,
     ProcessUpdate(u16, CellValue),
+    GameOver,
 }
 pub struct Board {
     pub col: u16,
@@ -42,7 +44,7 @@ impl Component for Board {
             events: BoardEvents::Idle,
         });
         Self {
-            turn: 0,
+            turn: PLAYER_TURN,
             state,
             col: ctx.props().col,
             row: ctx.props().row,
@@ -62,6 +64,9 @@ impl Component for Board {
                 //         CellValue::Empty => "Empty",
                 //     }
                 // );
+                if self.turn == COMPUTER_TURN {
+                    return false;
+                }
                 if val == CellValue::Empty {
                     return false;
                 }
@@ -71,12 +76,11 @@ impl Component for Board {
                     TimeoutFuture::new(100).await;
                     link.send_message(BoardMsg::ProcessUpdate(id, val));
                     TimeoutFuture::new(100).await;
+                    link.send_message(BoardMsg::BotMove);
+                    TimeoutFuture::new(100).await;
                     link.send_message(BoardMsg::UnlockCells);
                 });
 
-                // ctx.link().send_message(BoardMsg::LockCells);
-                // ctx.link().send_message(BoardMsg::ProcessUpdate(id, val));
-                // ctx.link().send_message(BoardMsg::UnlockCells);
                 false
             },
             BoardMsg::LockCells => {
@@ -87,10 +91,16 @@ impl Component for Board {
                 let res = self.game_engine.update(self.turn, id, val);
                 match res {
                     Ok(result) => {
+                        self.player_score = result.scores[0];
+                        self.bot_score = result.scores[1];
+                        self.turn = result.next_turn;
                         let mut map = HashMap::new();
                         map.insert(id, (0,Some(val)));
-                        self.updating_class(&result, &mut map);
+                        self.grouping_sos(&result.new_sos, &mut map);
                         Rc::make_mut(&mut self.state).events = BoardEvents::Update(map);
+                        if self.game_engine.is_game_over() {
+                            ctx.link().send_message(BoardMsg::GameOver);
+                        }
                         true
                     },
                     Err(_) => {
@@ -99,7 +109,37 @@ impl Component for Board {
                 }
             }
             BoardMsg::UnlockCells => {
+                if self.game_engine.is_game_over() {
+                    return false;
+                }
                 Rc::make_mut(&mut self.state).events = BoardEvents::Unlock;
+                true
+            },
+            BoardMsg::BotMove => {
+                if self.turn != COMPUTER_TURN {
+                    return false;
+                }
+                let response = self.game_engine.bot_move();
+                match response {
+                    Ok((pos, val, sos)) => {
+                        self.turn = self.game_engine.get_current_turn();
+                        let mut map = HashMap::new();
+                        map.insert(pos, (0,Some(val)));
+                        self.grouping_sos(&sos, &mut map);
+                        let scores = self.game_engine.get_scores();
+                        self.player_score = scores[0];
+                        self.bot_score = scores[1];
+                        Rc::make_mut(&mut self.state).events = BoardEvents::Update(map);
+                        if self.game_engine.is_game_over() {
+                            ctx.link().send_message(BoardMsg::GameOver);
+                        }
+                    }
+                    Err(_) => {}
+                }
+                true
+            },
+            BoardMsg::GameOver => {
+                Rc::make_mut(&mut self.state).events = BoardEvents::Lock;
                 true
             }
         }
@@ -110,6 +150,18 @@ impl Component for Board {
         let onselect = ctx.link().callback(BoardMsg::Selecting);
         let cells = (0..self.col*self.row).map(|i| html! { <Cell id={i} onselect={onselect.clone()}/>  });
         let style = format!("grid-template-columns: repeat({}, 1fr);grid-template-rows: repeat({}, 1fr);", self.col, self.row);
+        let message = if self.game_engine.is_game_over() {
+            match self.player_score.cmp(&self.bot_score) {
+                std::cmp::Ordering::Greater => "You win!",
+                std::cmp::Ordering::Less => "Computer wins!",
+                std::cmp::Ordering::Equal => "Draw!",
+            }
+        } else if self.turn == 0 {
+            "Your turn"
+        } else {
+            "Enemy turn"
+        };
+
         html! {
             <>
             <div class="scoreboard">
@@ -117,13 +169,7 @@ impl Component for Board {
                 <span class="computer-score">{ "Computer Score: "} {self.bot_score}</span>
             </div>
             <div class="turn center">
-            {
-                if self.turn == 0 {
-                    html!("Your turn")
-                }else {
-                    html!("Enemy turn")
-                }
-            }
+            { message }
             </div>
             <ContextProvider<Rc<BoardState>> context={state}>
                 <div class="grid center" style={style}>
@@ -136,11 +182,8 @@ impl Component for Board {
 }
 
 impl Board {
-    fn updating_class(&mut self, result: &UpdateResponse, map: &mut HashMap<u16, (u8, Option<CellValue>)>) {
-        self.player_score = result.scores[0];
-        self.bot_score = result.scores[1];
-        self.turn = result.next_turn;
-        for (x,y,z) in &result.new_sos {
+    fn grouping_sos(&mut self, result: &Vec<(u16, u16, u16)>, map: &mut HashMap<u16, (u8, Option<CellValue>)>) {
+        for (x,y,z) in result {
             if !map.contains_key(&x) {
                 map.insert(*x, (0, None));
             }
@@ -152,7 +195,6 @@ impl Board {
             }
 
             let i = *x as i16;
-            let j = *y as i16;
             let k = *z as i16;
 
             match (x, y, z) {
