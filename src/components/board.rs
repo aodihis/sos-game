@@ -55,13 +55,13 @@ impl Component for Board {
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             BoardMsg::Selecting((id, val)) => {
-                info!(
-                    match val {
-                        CellValue::S => "S",
-                        CellValue::O => "O",
-                        CellValue::Empty => "Empty",
-                    }
-                );
+                // info!(
+                //     match val {
+                //         CellValue::S => "S",
+                //         CellValue::O => "O",
+                //         CellValue::Empty => "Empty",
+                //     }
+                // );
                 if val == CellValue::Empty {
                     return false;
                 }
@@ -80,16 +80,13 @@ impl Component for Board {
                 false
             },
             BoardMsg::LockCells => {
-                info!("Lock");
                 Rc::make_mut(&mut self.state).events = BoardEvents::Lock;
                 true
             }
             BoardMsg::ProcessUpdate(id, val) => {
-                info!("Updating");
                 let res = self.game_engine.update(self.turn, id, val);
                 match res {
                     Ok(result) => {
-                        info!(result.new_sos.len());
                         let mut map = HashMap::new();
                         map.insert(id, (0,Some(val)));
                         self.updating_class(&result, &mut map);
@@ -160,7 +157,6 @@ impl Board {
 
             match (x, y, z) {
                 (x,y,z) if (i + 2) + (self.col as i16 )* 2 == k => { //diagonal left to right
-                    info!("diagonal l r");
                     let (mut a, val) = map[&x];
                     a |= LINE_BOTTOM_RIGHT;
                     map.insert(*x, (a, val));
@@ -174,7 +170,6 @@ impl Board {
                     map.insert(*z, (c, val));
                 },
                 (x,y,z) if i + (self.col as i16 ) * 2 == k => {  // vertical
-                    info!("vertical");
                     let (mut a, val) = map[&x];
                     a |= LINE_BOTTOM_CENTER;
                     map.insert(*x, (a, val));
@@ -188,7 +183,6 @@ impl Board {
                     map.insert(*z, (c, val));
                 },
                 (x,y,z) if (i-2) + (self.col as i16 )* 2 == k => { //diagonal right to left
-                    info!("diagonal r l");
                     let (mut a, val) = map[&x];
                     a |= LINE_BOTTOM_LEFT;
                     map.insert(*x, (a, val));
@@ -202,7 +196,6 @@ impl Board {
                     map.insert(*z, (c, val));
                 },
                 (x,y,z) if (i+2) == k =>{ // horizontal
-                    info!("horizontal");
                     let (mut a, val) = map[&x];
                     a |= LINE_CENTER_RIGHT;
                     map.insert(*x, (a, val));
@@ -216,7 +209,6 @@ impl Board {
                     map.insert(*z, (c, val));
                 },
                 _ => {
-                    info!(i,j,k);
                 }
             }
 

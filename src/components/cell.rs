@@ -72,15 +72,12 @@ impl Component for Cell {
             Msg::ContextChanged(state) => {
                 match &state.events {
                     BoardEvents::Lock =>  {
-                        info!("Locked");
                         self.sys_lock = true;
                     },
                     BoardEvents::Unlock => {
                         self.sys_lock = false;
-                        info!("Unlocked");
                     },
                     BoardEvents::Update(map) => {
-                        info!("Updated: ");
                         if !map.contains_key(&self.id) && !self.is_lock {
                             self.value = CellValue::Empty;
                             return true;
@@ -90,10 +87,8 @@ impl Component for Cell {
                             return false;
                         }
                         let (pattern, val) = map[&self.id];
-                        info!("pattern :",pattern, self.id);
                         if let Some(val) = val {
                             self.value = val;
-                            info!("update val");
                             self.is_lock = true;
                         }
 

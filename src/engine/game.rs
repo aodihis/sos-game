@@ -122,14 +122,12 @@ impl Game {
 
     fn get_sos_candidates(&self, candidates: &mut Vec<(u16, u16, u16)>, groups: Vec<(i16, i16, i16)>) {
         for &(i,j, k) in groups.iter() {
-            // info!(i,j,k);
             if i < 0 || j < 0 || k < 0 {
                 continue;
             }
             if i >= self.total as i16 || j >= self.total as i16 || k >= self.total as i16 {
                 continue;
             }
-            // info!("Closer", i, j, k);
             if self.cells[i as usize] == CellValue::S && self.cells[j as usize] == CellValue::O  && self.cells[k as usize] == CellValue::S {
                 candidates.push((i as u16, j as u16, k as u16));
             }
