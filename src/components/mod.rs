@@ -1,3 +1,4 @@
 pub mod cell;
 pub mod board;
-mod state;
+pub mod state;
+pub mod constants;

@@ -1,7 +1,10 @@
 use crate::components::state::{BoardEvents, BoardState};
 use std::cmp::PartialEq;
 use std::rc::Rc;
+use gloo::console::info;
+use wasm_bindgen::JsValue;
 use yew::{html, Callback, Component, Context, ContextHandle, Html, MouseEvent, Properties};
+use crate::components::constants::{LINE_BOTTOM_CENTER, LINE_BOTTOM_LEFT, LINE_BOTTOM_RIGHT, LINE_CENTER_LEFT, LINE_CENTER_RIGHT, LINE_TOP_CENTER, LINE_TOP_LEFT, LINE_TOP_RIGHT};
 use crate::engine::cell::CellValue;
 
 pub enum Msg {
@@ -68,9 +71,58 @@ impl Component for Cell {
         match msg {
             Msg::ContextChanged(state) => {
                 match &state.events {
-                    BoardEvents::Lock => self.sys_lock = true,
-                    BoardEvents::Unlock => self.sys_lock = false,
-                    BoardEvents::Update(_map) => {},
+                    BoardEvents::Lock =>  {
+                        info!("Locked");
+                        self.sys_lock = true;
+                    },
+                    BoardEvents::Unlock => {
+                        self.sys_lock = false;
+                        info!("Unlocked");
+                    },
+                    BoardEvents::Update(map) => {
+                        info!("Updated: ");
+                        if !map.contains_key(&self.id) && !self.is_lock {
+                            self.value = CellValue::Empty;
+                            return true;
+                        }
+
+                        if !map.contains_key(&self.id) {
+                            return false;
+                        }
+                        let (pattern, val) = map[&self.id];
+                        info!("pattern :",pattern, self.id);
+                        if let Some(val) = val {
+                            self.value = val;
+                            info!("update val");
+                            self.is_lock = true;
+                        }
+
+                        if pattern & LINE_TOP_LEFT == LINE_TOP_LEFT {
+                            self.top_left = true;
+                        }
+                        if pattern & LINE_TOP_CENTER == LINE_TOP_CENTER {
+                            self.top_center = true;
+                        }
+                        if pattern & LINE_TOP_RIGHT == LINE_TOP_RIGHT {
+                            self.top_right = true;
+                        }
+                        if pattern & LINE_CENTER_LEFT == LINE_CENTER_LEFT {
+                            self.center_left = true;
+                        }
+                        if pattern & LINE_CENTER_RIGHT == LINE_CENTER_RIGHT {
+                            self.center_right = true;
+                        }
+                        if pattern & LINE_BOTTOM_LEFT == LINE_BOTTOM_LEFT {
+                            self.bottom_left = true;
+                        }
+                        if pattern & LINE_BOTTOM_CENTER == LINE_BOTTOM_CENTER {
+                            self.bottom_center = true;
+                        }
+                        if pattern & LINE_BOTTOM_RIGHT == LINE_BOTTOM_RIGHT {
+                            self.bottom_right = true;
+                        }
+
+                    },
                     _ => {}
                 }
                 self.state = state;

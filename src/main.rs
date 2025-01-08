@@ -16,13 +16,6 @@ fn App() -> Html {
             <div class="container">
                 <div class="center"  style={width_style}>
                     <h1 class="center header">{"SOS Game"}</h1>
-                    <div class="scoreboard">
-                        <span class="your-score">{ "Your Score: 0" }</span>
-                        <span class="computer-score">{ "Computer Score: 0" }</span>
-                    </div>
-                    <div class="turn center">
-                        {"Your turn."}
-                    </div>
                     <Board row={row} col={column}/>
                 </div>
             </div>
