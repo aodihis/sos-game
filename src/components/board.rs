@@ -20,7 +20,7 @@ pub enum BoardMsg {
     UnlockCells,
     BotMove,
     ProcessUpdate(u16, CellValue),
-    GameOver,
+    CheckGameOver,
 }
 pub struct Board {
     pub col: u16,
@@ -68,6 +68,8 @@ impl Component for Board {
                     link.send_message(BoardMsg::ProcessUpdate(id, val));
                     TimeoutFuture::new(100).await;
                     link.send_message(BoardMsg::BotMove);
+                    TimeoutFuture::new(100).await;
+                    link.send_message(BoardMsg::CheckGameOver);
                     TimeoutFuture::new(100).await;
                     link.send_message(BoardMsg::UnlockCells);
                 });
@@ -118,17 +120,18 @@ impl Component for Board {
                         self.player_score = scores[0];
                         self.bot_score = scores[1];
                         Rc::make_mut(&mut self.state).events = BoardEvents::Update(map);
-                        if self.game_engine.is_game_over() {
-                            ctx.link().send_message(BoardMsg::GameOver);
-                        }
                     }
                     Err(_e) => {}
                 }
                 true
             },
-            BoardMsg::GameOver => {
-                Rc::make_mut(&mut self.state).events = BoardEvents::Lock;
-                true
+            BoardMsg::CheckGameOver => {
+                if self.game_engine.is_game_over() {
+                    Rc::make_mut(&mut self.state).events = BoardEvents::Lock;
+                    return true
+                }
+                false
+
             }
         }
     }

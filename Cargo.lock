@@ -738,14 +738,11 @@ dependencies = [
 name = "sos-game"
 version = "0.1.0"
 dependencies = [
- "getrandom",
  "gloo",
  "gloo-timers",
- "log",
  "rand",
  "wasm-bindgen",
  "wasm-bindgen-futures",
- "web-sys",
  "yew",
 ]
 
